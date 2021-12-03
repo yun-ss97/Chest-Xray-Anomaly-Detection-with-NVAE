@@ -20,8 +20,7 @@ The Chest Radiography Dataset consist of a total of 4 classes: Normal, Covid, Lu
 <br>
 </br>
 
-## Below we describe the code guidelines for training NVAE models.
----
+## [Guideline] Below we describe the code guidelines for training NVAE models
 ## Requirements
 NVAE is built in Python 3.7 using PyTorch 1.6.0. Use the following command to install the requirements:
 ```
