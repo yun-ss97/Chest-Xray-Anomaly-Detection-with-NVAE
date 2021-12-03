@@ -1,102 +1,32 @@
-# The Official PyTorch Implementation of "NVAE: A Deep Hierarchical Variational Autoencoder" [(NeurIPS 2020 Spotlight Paper)](https://arxiv.org/abs/2007.03898)
+# Chest X-ray Anomaly Detection with NVAE
 
-<div align="center">
-  <a href="http://latentspace.cc/arash_vahdat/" target="_blank">Arash&nbsp;Vahdat</a> &emsp; <b>&middot;</b> &emsp;
-  <a href="http://jankautz.com/" target="_blank">Jan&nbsp;Kautz</a> 
-</div>
-<br>
-<br>
-
-[NVAE](https://arxiv.org/abs/2007.03898) is a deep hierarchical variational autoencoder that enables training SOTA 
+## About NVAE
+["NVAE: A Deep Hierarchical Variational Autoencoder"](https://arxiv.org/abs/2007.03898) is a deep hierarchical variational autoencoder that enables training SOTA 
 likelihood-based generative models on several image datasets.
 
-<p align="center">
-    <img src="img/celebahq.png" width="800">
-</p>
+## NVAE for anomaly detection
+As original code consist of training/evaluating NVAE which is the generative model, I come up with applying NVAE to anomaly detection. The original implementation contains code for various datasets such as MNIST, CIFAR10, Celeb-A, and etc. However, I add extra dataset named Chest Radiography Dataset. You can access to this dataset from [here](https://www.kaggle.com/tawsifurrahman/covid19-radiography-database).
 
+The Chest Radiography Dataset consist of a total of 4 classes: Normal, Covid, Lung-Opacity, and Viral Pneumonia. In order to perform anomaly detection, training and evaluation are conducted using only Normal and Covid data among them. Normal data is used for training, and Covid data is used for evaluation.
+
+
+<p align="center">
+    <img src="/home/ys/repo/NVAE/covid_dataset/COVID/COVID-89.png" width="200" /> 
+    <img src="/home/ys/repo/NVAE/covid_dataset/Normal/Normal-79.png" width="200">
+    
+</p>
+<p align="center">(left) Covid Image | (right) Normal Image <p align="center">
+
+<br>
+</br>
+
+## Below we describe the code guidelines for training NVAE models.
+---
 ## Requirements
 NVAE is built in Python 3.7 using PyTorch 1.6.0. Use the following command to install the requirements:
 ```
 pip install -r requirements.txt
 ``` 
-
-## Set up file paths and data
-We have examined NVAE on several datasets. For large datasets, we store the data in LMDB datasets
-for I/O efficiency. Click below on each dataset to see how you can prepare your data. Below, `$DATA_DIR` indicates
-the path to a data directory that will contain all the datasets and `$CODE_DIR` refers to the code directory:
-
-<details><summary>MNIST and CIFAR-10</summary>
-
-These datasets will be downloaded automatically, when you run the main training for NVAE using `train.py`
-for the first time. You can use `--data=$DATA_DIR/mnist` or `--data=$DATA_DIR/cifar10`, so that the datasets
-are downloaded to the corresponding directories.
-</details>
-
-<details><summary>CelebA 64</summary>
-Run the following commands to download the CelebA images and store them in an LMDB dataset:
-
-```shell script
-cd $CODE_DIR/scripts
-python create_celeba64_lmdb.py --split train --img_path $DATA_DIR/celeba_org --lmdb_path $DATA_DIR/celeba64_lmdb
-python create_celeba64_lmdb.py --split valid --img_path $DATA_DIR/celeba_org --lmdb_path $DATA_DIR/celeba64_lmdb
-python create_celeba64_lmdb.py --split test  --img_path $DATA_DIR/celeba_org --lmdb_path $DATA_DIR/celeba64_lmdb
-```
-Above, the images will be downloaded to `$DATA_DIR/celeba_org` automatically and then then LMDB datasets are created
-at `$DATA_DIR/celeba64_lmdb`.
-</details>
- 
-<details><summary>ImageNet 32x32</summary>
-
-Run the following commands to download tfrecord files from [GLOW](https://github.com/openai/glow) and to convert them
-to LMDB datasets
-```shell script
-mkdir -p $DATA_DIR/imagenet-oord
-cd $DATA_DIR/imagenet-oord
-wget https://storage.googleapis.com/glow-demo/data/imagenet-oord-tfr.tar
-tar -xvf imagenet-oord-tfr.tar
-cd $CODE_DIR/scripts
-python convert_tfrecord_to_lmdb.py --dataset=imagenet-oord_32 --tfr_path=$DATA_DIR/imagenet-oord/mnt/host/imagenet-oord-tfr --lmdb_path=$DATA_DIR/imagenet-oord/imagenet-oord-lmdb_32 --split=train
-python convert_tfrecord_to_lmdb.py --dataset=imagenet-oord_32 --tfr_path=$DATA_DIR/imagenet-oord/mnt/host/imagenet-oord-tfr --lmdb_path=$DATA_DIR/imagenet-oord/imagenet-oord-lmdb_32 --split=validation
-```
-</details>
-
-<details><summary>CelebA HQ 256</summary>
-
-Run the following commands to download tfrecord files from [GLOW](https://github.com/openai/glow) and to convert them
-to LMDB datasets
-```shell script
-mkdir -p $DATA_DIR/celeba
-cd $DATA_DIR/celeba
-wget https://storage.googleapis.com/glow-demo/data/celeba-tfr.tar
-tar -xvf celeba-tfr.tar
-cd $CODE_DIR/scripts
-python convert_tfrecord_to_lmdb.py --dataset=celeba --tfr_path=$DATA_DIR/celeba/celeba-tfr --lmdb_path=$DATA_DIR/celeba/celeba-lmdb --split=train
-python convert_tfrecord_to_lmdb.py --dataset=celeba --tfr_path=$DATA_DIR/celeba/celeba-tfr --lmdb_path=$DATA_DIR/celeba/celeba-lmdb --split=validation
-```
-</details>
-
-
-<details><summary>FFHQ 256</summary>
-
-Visit [this Google drive location](https://drive.google.com/drive/folders/1WocxvZ4GEZ1DI8dOz30aSj2zT6pkATYS) and download
-`images1024x1024.zip`. Run the following commands to unzip the images and to store them in LMDB datasets:
-```shell script
-mkdir -p $DATA_DIR/ffhq
-unzip images1024x1024.zip -d $DATA_DIR/ffhq/
-cd $CODE_DIR/scripts
-python create_ffhq_lmdb.py --ffhq_img_path=$DATA_DIR/ffhq/images1024x1024/ --ffhq_lmdb_path=$DATA_DIR/ffhq/ffhq-lmdb --split=train
-python create_ffhq_lmdb.py --ffhq_img_path=$DATA_DIR/ffhq/images1024x1024/ --ffhq_lmdb_path=$DATA_DIR/ffhq/ffhq-lmdb --split=validation
-```
-</details>
-
-<details><summary>LSUN</summary>
-
-We use LSUN datasets in our follow-up works. Visit [LSUN](https://www.yf.io/p/lsun) for 
-instructions on how to download this dataset. Since the LSUN scene datasets come in the
-LMDB format, they are ready to be loaded using torchvision data loaders.
-
-</details>
-
 
 ## Running the main NVAE training and evaluation scripts
 We use the following commands on each dataset for training NVAEs on each dataset for 
@@ -108,9 +38,9 @@ Below `IP_ADDR` is the IP address of the machine that will host the process with
 (see [here](https://pytorch.org/tutorials/intermediate/dist_tuto.html#initialization-methods)). 
 `NODE_RANK` is the index of each node among all the nodes that are running the job.
 
-<details><summary>MNIST</summary>
+<details><summary>Covid</summary>
 
-Two 16-GB V100 GPUs are used for training NVAE on dynamically binarized MNIST. Training takes about 21 hours.
+GPU are used for training NVAE on dynamically binarized Covid.
 
 ```shell script
 export EXPR_ID=UNIQUE_EXPR_ID
@@ -118,7 +48,7 @@ export DATA_DIR=PATH_TO_DATA_DIR
 export CHECKPOINT_DIR=PATH_TO_CHECKPOINT_DIR
 export CODE_DIR=PATH_TO_CODE_DIR
 cd $CODE_DIR
-python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --dataset mnist --batch_size 200 \
+python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --dataset covid --batch_size 200 \
         --epochs 400 --num_latent_scales 2 --num_groups_per_scale 10 --num_postprocess_cells 3 --num_preprocess_cells 3 \
         --num_cell_per_cond_enc 2 --num_cell_per_cond_dec 2 --num_latent_per_group 20 --num_preprocess_blocks 2 \
         --num_postprocess_blocks 2 --weight_decay_norm 1e-2 --num_channels_enc 32 --num_channels_dec 32 --num_nf 0 \
@@ -126,148 +56,10 @@ python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --
 ```
 </details>
 
-<details><summary>CIFAR-10</summary>
-
-Eight 16-GB V100 GPUs are used for training NVAE on CIFAR-10. Training takes about 55 hours.
-
-```shell script
-export EXPR_ID=UNIQUE_EXPR_ID
-export DATA_DIR=PATH_TO_DATA_DIR
-export CHECKPOINT_DIR=PATH_TO_CHECKPOINT_DIR
-export CODE_DIR=PATH_TO_CODE_DIR
-cd $CODE_DIR
-python train.py --data $DATA_DIR/cifar10 --root $CHECKPOINT_DIR --save $EXPR_ID --dataset cifar10 \
-        --num_channels_enc 128 --num_channels_dec 128 --epochs 400 --num_postprocess_cells 2 --num_preprocess_cells 2 \
-        --num_latent_scales 1 --num_latent_per_group 20 --num_cell_per_cond_enc 2 --num_cell_per_cond_dec 2 \
-        --num_preprocess_blocks 1 --num_postprocess_blocks 1 --num_groups_per_scale 30 --batch_size 32 \
-        --weight_decay_norm 1e-2 --num_nf 1 --num_process_per_node 8 --use_se --res_dist --fast_adamax 
-```
-</details>
-
-<details><summary>CelebA 64</summary>
-
-Eight 16-GB V100 GPUs are used for training NVAE on CelebA 64. Training takes about 92 hours.
-
-```shell script
-export EXPR_ID=UNIQUE_EXPR_ID
-export DATA_DIR=PATH_TO_DATA_DIR
-export CHECKPOINT_DIR=PATH_TO_CHECKPOINT_DIR
-export CODE_DIR=PATH_TO_CODE_DIR
-cd $CODE_DIR
-python train.py --data $DATA_DIR/celeba64_lmdb --root $CHECKPOINT_DIR --save $EXPR_ID --dataset celeba_64 \
-        --num_channels_enc 64 --num_channels_dec 64 --epochs 90 --num_postprocess_cells 2 --num_preprocess_cells 2 \
-        --num_latent_scales 3 --num_latent_per_group 20 --num_cell_per_cond_enc 2 --num_cell_per_cond_dec 2 \
-        --num_preprocess_blocks 1 --num_postprocess_blocks 1 --weight_decay_norm 1e-1 --num_groups_per_scale 20 \
-        --batch_size 16 --num_nf 1 --ada_groups --num_process_per_node 8 --use_se --res_dist --fast_adamax
-```
-</details>
-
-<details><summary>ImageNet 32x32</summary>
-
-24 16-GB V100 GPUs are used for training NVAE on ImageNet 32x32. Training takes about 70 hours.
-
-```shell script
-export EXPR_ID=UNIQUE_EXPR_ID
-export DATA_DIR=PATH_TO_DATA_DIR
-export CHECKPOINT_DIR=PATH_TO_CHECKPOINT_DIR
-export CODE_DIR=PATH_TO_CODE_DIR
-export IP_ADDR=IP_ADDRESS
-export NODE_RANK=NODE_RANK_BETWEEN_0_TO_2
-cd $CODE_DIR
-mpirun --allow-run-as-root -np 3 -npernode 1 bash -c \
-        'python train.py --data $DATA_DIR/imagenet-oord/imagenet-oord-lmdb_32 --root $CHECKPOINT_DIR --save $EXPR_ID --dataset imagenet_32 \
-        --num_channels_enc 192 --num_channels_dec 192 --epochs 45 --num_postprocess_cells 2 --num_preprocess_cells 2 \
-        --num_latent_scales 1 --num_latent_per_group 20 --num_cell_per_cond_enc 2 --num_cell_per_cond_dec 2 \
-        --num_preprocess_blocks 1 --num_postprocess_blocks 1 --num_groups_per_scale 28 \
-        --batch_size 24 --num_nf 1 --warmup_epochs 1 \
-        --weight_decay_norm 1e-2 --weight_decay_norm_anneal --weight_decay_norm_init 1e0 \
-        --num_process_per_node 8 --use_se --res_dist \
-        --fast_adamax --node_rank $NODE_RANK --num_proc_node 3 --master_address $IP_ADDR '
-```
-</details>
-
-<details><summary>CelebA HQ 256</summary>
-
-24 32-GB V100 GPUs are used for training NVAE on CelebA HQ 256. Training takes about 94 hours.
-
-```shell script
-export EXPR_ID=UNIQUE_EXPR_ID
-export DATA_DIR=PATH_TO_DATA_DIR
-export CHECKPOINT_DIR=PATH_TO_CHECKPOINT_DIR
-export CODE_DIR=PATH_TO_CODE_DIR
-export IP_ADDR=IP_ADDRESS
-export NODE_RANK=NODE_RANK_BETWEEN_0_TO_2
-cd $CODE_DIR
-mpirun --allow-run-as-root -np 3 -npernode 1 bash -c \
-        'python train.py --data $DATA_DIR/celeba/celeba-lmdb --root $CHECKPOINT_DIR --save $EXPR_ID --dataset celeba_256 \
-        --num_channels_enc 30 --num_channels_dec 30 --epochs 300 --num_postprocess_cells 2 --num_preprocess_cells 2 \
-        --num_latent_scales 5 --num_latent_per_group 20 --num_cell_per_cond_enc 2 --num_cell_per_cond_dec 2 \
-        --num_preprocess_blocks 1 --num_postprocess_blocks 1 --weight_decay_norm 1e-2 --num_groups_per_scale 16 \
-        --batch_size 4 --num_nf 2 --ada_groups --min_groups_per_scale 4 \
-        --weight_decay_norm_anneal --weight_decay_norm_init 1. --num_process_per_node 8 --use_se --res_dist \
-        --fast_adamax --num_x_bits 5 --node_rank $NODE_RANK --num_proc_node 3 --master_address $IP_ADDR '
-```
-
-In our early experiments, a smaller model with 24 channels instead of 30, could be trained on only 8 GPUs in 
-the same time (with the batch size of 6). The smaller models obtain only 0.01 bpd higher 
-negative log-likelihood.
-</details>
-
-<details><summary>FFHQ 256</summary>
-
-24 32-GB V100 GPUs are used for training NVAE on FFHQ 256. Training takes about 160 hours. 
-
-```shell script
-export EXPR_ID=UNIQUE_EXPR_ID
-export DATA_DIR=PATH_TO_DATA_DIR
-export CHECKPOINT_DIR=PATH_TO_CHECKPOINT_DIR
-export CODE_DIR=PATH_TO_CODE_DIR
-export IP_ADDR=IP_ADDRESS
-export NODE_RANK=NODE_RANK_BETWEEN_0_TO_2
-cd $CODE_DIR
-mpirun --allow-run-as-root -np 3 -npernode 1 bash -c \
-        'python train.py --data $DATA_DIR/ffhq/ffhq-lmdb --root $CHECKPOINT_DIR --save $EXPR_ID --dataset ffhq \
-        --num_channels_enc 30 --num_channels_dec 30 --epochs 200 --num_postprocess_cells 2 --num_preprocess_cells 2 \
-        --num_latent_scales 5 --num_latent_per_group 20 --num_cell_per_cond_enc 2 --num_cell_per_cond_dec 2 \
-        --num_preprocess_blocks 1 --num_postprocess_blocks 1 --weight_decay_norm 1e-1  --num_groups_per_scale 16 \
-        --batch_size 4 --num_nf 2  --ada_groups --min_groups_per_scale 4 \
-        --weight_decay_norm_anneal --weight_decay_norm_init 1. --num_process_per_node 8 --use_se --res_dist \
-        --fast_adamax --num_x_bits 5 --learning_rate 8e-3 --node_rank $NODE_RANK --num_proc_node 3 --master_address $IP_ADDR '
-```
-
-In our early experiments, a smaller model with 24 channels instead of 30, could be trained on only 8 GPUs in 
-the same time (with the batch size of 6). The smaller models obtain only 0.01 bpd higher 
-negative log-likelihood.
-</details>
-
 **If for any reason your training is stopped, use the exact same commend with the addition of `--cont_training`
 to continue training from the last saved checkpoint. If you observe NaN, continuing the training using this flag
 usually will not fix the NaN issue.**
 
-## Known Issues
-<details><summary>Cannot build CelebA 64 or training gives NaN right at the beginning on this dataset </summary>
-
-Several users have reported issues building CelebA 64 or have encountered NaN at the beginning of training on this dataset.
-If you face similar issues on this dataset, you can download this dataset manually and build LMDBs using instructions
-on this issue https://github.com/NVlabs/NVAE/issues/2 .
-</details>
-
-<details><summary>Getting NaN after a few epochs of training </summary>
-
-One of the main challenges in training very deep hierarchical VAEs is training instability that we discussed in the paper.
-We have verified that the settings in the commands above can be trained in a stable way. If you modify the settings
-above and you encounter NaN after a few epochs of training, you can use these tricks to stabilize your training:
-i) increase the spectral regularization coefficient, `--weight_decay_norm`. ii) Use exponential decay on 
-`--weight_decay_norm` using  `--weight_decay_norm_anneal` and `--weight_decay_norm_init`. iii) Decrease learning rate.
-</details>
-
-<details><summary>Training freezes with no NaN </summary>
-
-In some very rare cases, we observed that training freezes after 2-3 days of training. We believe the root cause
-of this is because of a racing condition that is happening in one of the low-level libraries. If for any reason the training 
-is stopped, kill your current run, and use the exact same commend with the addition of `--cont_training`
-to continue training from the last saved checkpoint.
-</details>
 
 ## Monitoring the training progress
 While running any of the commands above, you can monitor the training progress using Tensorboard:
@@ -335,18 +127,6 @@ Set `--data` to the same argument that was used when training NVAE (our example 
 
 </details> 
 
-<details><summary>Checkpoints</summary> 
-
-We provide checkpoints on MNIST, CIFAR-10, CelebA 64, CelebA HQ 256, FFHQ in 
-[this Google drive directory](https://drive.google.com/drive/folders/1KVpw12AzdVjvbfEYM_6_3sxTy93wWkbe?usp=sharing). 
-For CIFAR10, we provide two checkpoints as we observed that a multiscale NVAE provides better qualitative
-results than a single scale model on this dataset. The multiscale model is only slightly worse in terms
-of log-likelihood (0.01 bpd). We also observe that one of our early models on CelebA HQ 256 with 0.01 bpd 
-worse likelihood generates much better images in low temperature on this dataset.
-
-You can use the commands above to evaluate or sample from these checkpoints.
-
-</details> 
 
 ## How to construct smaller NVAE models
 In the commands above, we are constructing big NVAE models that require several days of training
@@ -378,22 +158,7 @@ We use two schemes for setting the number of groups:
     the total number of groups by reducing `--num_groups_per_scale` and `--min_groups_per_scale`
     when `--ada_groups` is enabled.
 
-## Understanding the implementation
-If you are modifying the code, you can use the following figure to map the code to the paper.
 
-<p align="center">
-    <img src="img/model_diagram.png" width="900">
-</p>
-
-
-## Traversing the latent space
-We can generate images by traversing in the latent space of NVAE. This sequence is generated using our model
-trained on CelebA HQ, by interpolating between samples generated with temperature 0.6. 
-Some artifacts are due to color quantization in GIFs.
-
-<p align="center">
-    <img src="https://drive.google.com/uc?id=1k_s_TCdblNRI6MG_X1tji9VoOPumCzz9" width="512">
-</p>
 
 ## License
 Please check the LICENSE file. NVAE may be used non-commercially, meaning for research or 
