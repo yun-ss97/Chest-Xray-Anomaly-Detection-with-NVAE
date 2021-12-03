@@ -36,9 +36,6 @@ Below `IP_ADDR` is the IP address of the machine that will host the process with
 (see [here](https://pytorch.org/tutorials/intermediate/dist_tuto.html#initialization-methods)). 
 `NODE_RANK` is the index of each node among all the nodes that are running the job.
 
-<details><summary>Covid</summary>
-
-GPU are used for training NVAE on dynamically binarized Covid.
 
 ```shell script
 export EXPR_ID=UNIQUE_EXPR_ID
@@ -52,7 +49,6 @@ python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --
         --num_postprocess_blocks 2 --weight_decay_norm 1e-2 --num_channels_enc 32 --num_channels_dec 32 --num_nf 0 \
         --ada_groups --num_process_per_node 2 --use_se --res_dist --fast_adamax 
 ```
-</details>
 
 **If for any reason your training is stopped, use the exact same commend with the addition of `--cont_training`
 to continue training from the last saved checkpoint. If you observe NaN, continuing the training using this flag
