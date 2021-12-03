@@ -11,8 +11,8 @@ The Chest Radiography Dataset consist of a total of 4 classes: Normal, Covid, Lu
 
 
 <p align="center">
-    <img src="/home/ys/repo/NVAE/covid_dataset/COVID/COVID-89.png" width="200" /> 
-    <img src="/home/ys/repo/NVAE/covid_dataset/Normal/Normal-79.png" width="200">
+    <img src="covid_dataset/COVID/COVID-89.png" width="200" /> 
+    <img src="covid_dataset/Normal/Normal-79.png" width="200">
     
 </p>
 <p align="center">(left) Covid Image | (right) Normal Image <p align="center">
